@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 99%;
+    --foreground: 230 25% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 230 25% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 25% 9%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 228 18% 94%;
+    --secondary-foreground: 230 20% 16%;
+    --muted: 228 16% 95%;
+    --muted-foreground: 230 10% 42%;
+    --accent: 240 30% 94%;
+    --accent-foreground: 230 25% 12%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 65% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 44%;
+    --warning-foreground: 0 0% 100%;
+    --border: 228 14% 90%;
+    --input: 228 14% 86%;
+    --ring: 243 75% 59%;
+    --sidebar: 225 18% 97%;
+    --sidebar-foreground: 230 15% 22%;
+    --sidebar-accent: 235 22% 91%;
+    --sidebar-accent-foreground: 232 30% 14%;
+    --sidebar-border: 228 14% 90%;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 235 22% 4.5%;
+    --foreground: 220 18% 93%;
+    --card: 234 18% 6.5%;
+    --card-foreground: 220 18% 93%;
+    --popover: 234 20% 7.5%;
+    --popover-foreground: 220 18% 93%;
+    --primary: 242 88% 68%;
+    --primary-foreground: 240 40% 8%;
+    --secondary: 233 14% 12%;
+    --secondary-foreground: 220 14% 85%;
+    --muted: 233 14% 11.5%;
+    --muted-foreground: 224 10% 60%;
+    --accent: 235 16% 13.5%;
+    --accent-foreground: 220 18% 96%;
+    --destructive: 0 68% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 46%;
+    --success-foreground: 160 60% 6%;
+    --warning: 40 90% 56%;
+    --warning-foreground: 35 80% 8%;
+    --border: 233 13% 13.5%;
+    --input: 233 13% 17%;
+    --ring: 242 88% 68%;
+    --sidebar: 235 22% 5.5%;
+    --sidebar-foreground: 222 12% 74%;
+    --sidebar-accent: 234 16% 11%;
+    --sidebar-accent-foreground: 220 20% 96%;
+    --sidebar-border: 234 14% 10.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.28);
+  }
+
+  /* Refined focus states for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.7);
+    outline-offset: 2px;
+  }
+
+  /* Slim, theme-aware scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground) / 0.18) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--foreground) / 0.16);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground) / 0.28);
+  }
+}
+
+@layer components {
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.06),
+      transparent
+    );
+    animation: shimmer 1.8s infinite;
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--foreground)) 30%,
+      hsl(250 70% 72%) 70%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .grid-pattern {
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .glow-ring {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.35),
+      0 4px 24px -6px hsl(var(--primary) / 0.45);
+  }
+}

@@ -1,0 +1,242 @@
+// Insight — Prisma schema
+// PostgreSQL relational model for users, documents, collections,
+// conversations, messages, and RAG document chunks.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+enum FileType {
+  PDF
+  TXT
+  MD
+  DOCX
+}
+
+enum ProcessingStatus {
+  QUEUED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ThemePreference {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+// ─────────────────────────────────────────────────────────────
+// Auth + User
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  settings       UserSettings?
+  accounts       Account[]
+  sessions       Session[]
+  documents      Document[]
+  conversations  Conversation[]
+  collections    Collection[]
+  activityEvents ActivityEvent[]
+
+  @@index([email])
+}
+
+model UserSettings {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme                ThemePreference  @default(SYSTEM)
+  aiTemperature        Float            @default(0.2)
+  aiCitationsEnabled   Boolean          @default(true)
+  notificationsEnabled Boolean          @default(true)
+  emailDigest          Boolean          @default(false)
+  updatedAt            DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+// NextAuth standard tables (kept for future OAuth providers)
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Documents
+// ─────────────────────────────────────────────────────────────
+
+model Document {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  fileName         String
+  fileType         FileType
+  fileSize         Int
+  storageKey       String
+  extractedText    String?          @db.Text
+  wordCount        Int              @default(0)
+  pageCount        Int?
+  processingStatus ProcessingStatus @default(QUEUED)
+  errorMessage     String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  chunks        DocumentChunk[]
+  conversations Conversation[]
+  collections   CollectionDocument[]
+
+  @@index([userId, createdAt])
+  @@index([processingStatus])
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String   @db.Text
+  embedding  Json?
+  tokenCount Int      @default(0)
+  page       Int?
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Collections (many-to-many with documents)
+// ─────────────────────────────────────────────────────────────
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  color       String   @default("#6366f1")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents CollectionDocument[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model CollectionDocument {
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  documentId   String
+  document     Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, documentId])
+  @@index([documentId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Conversations & Messages
+// ─────────────────────────────────────────────────────────────
+
+model Conversation {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  title      String   @default("New conversation")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([userId, updatedAt])
+  @@index([documentId])
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String      @db.Text
+  sources        Json?
+  createdAt      DateTime    @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Activity feed (dashboard timeline / analytics)
+// ─────────────────────────────────────────────────────────────
+
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
