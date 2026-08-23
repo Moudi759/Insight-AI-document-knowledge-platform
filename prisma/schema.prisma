@@ -163,6 +163,14 @@ model DocumentChunk {
   @@index([documentId])
 }
 
+/// Original uploaded bytes for deployments without persistent disks
+/// (e.g. Vercel serverless). Key mirrors the storage abstraction key.
+model DocumentFile {
+  id        String   @id
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 // ─────────────────────────────────────────────────────────────
 // Collections (many-to-many with documents)
 // ─────────────────────────────────────────────────────────────

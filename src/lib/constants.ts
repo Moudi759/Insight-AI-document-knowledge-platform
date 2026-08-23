@@ -4,6 +4,25 @@ export const APP_DESCRIPTION =
   "Insight is an AI-powered document and knowledge platform. Upload documents, organize your library, and chat with your knowledge.";
 
 export const MAX_FILE_SIZE_MB = 20;
+export const DEFAULT_MAX_FILE_SIZE_MB = MAX_FILE_SIZE_MB;
+export const SERVERLESS_MAX_FILE_SIZE_MB = 4;
+
+/**
+ * Effective upload limit. Vercel (and most serverless hosts) reject
+ * request bodies over ~4.5 MB before our code runs, so cap there when
+ * hosted. Override locally via MAX_FILE_SIZE_MB.
+ */
+export function getMaxFileSizeMb(): number {
+  const configured = Number(process.env.MAX_FILE_SIZE_MB);
+  const base =
+    Number.isFinite(configured) && configured > 0
+      ? configured
+      : MAX_FILE_SIZE_MB;
+  if (process.env.VERCEL) {
+    return Math.min(base, SERVERLESS_MAX_FILE_SIZE_MB);
+  }
+  return base;
+}
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export const ACCEPTED_FILE_TYPES = [

@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { usePreferences } from "@/components/preferences-provider";
-import { ACCEPTED_EXTENSIONS_FLAT, MAX_FILE_SIZE_MB } from "@/lib/constants";
+import { ACCEPTED_EXTENSIONS_FLAT, DEFAULT_MAX_FILE_SIZE_MB } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/format";
 
@@ -61,6 +61,24 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
   );
 
   const { notificationsEnabled } = usePreferences();
+
+  // Server-side limits can differ per platform (e.g. 4 MB on Vercel) —
+  // mirror them here so validation and copy always match the API.
+  const [maxSizeMb, setMaxSizeMb] = React.useState(DEFAULT_MAX_FILE_SIZE_MB);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/config")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config: { maxFileSizeMb?: number } | null) => {
+        if (!cancelled && config?.maxFileSizeMb) {
+          setMaxSizeMb(config.maxFileSizeMb);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /** Poll the document until processing finishes, then refresh lists. */
   const pollProcessing = React.useCallback(
@@ -163,7 +181,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
           extension as (typeof ACCEPTED_EXTENSIONS_FLAT)[number]
         );
         const validSize =
-          file.size > 0 && file.size <= MAX_FILE_SIZE_MB * 1024 * 1024;
+          file.size > 0 && file.size <= maxSizeMb * 1024 * 1024;
 
         const itemId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -191,7 +209,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
               size: file.size,
               progress: 0,
               status: "error",
-              error: `File exceeds ${MAX_FILE_SIZE_MB} MB limit`,
+              error: `File exceeds ${maxSizeMb} MB limit`,
             },
           ]);
           continue;
@@ -264,7 +282,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
             Drop files here or <span className="text-primary">browse</span>
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            PDF, TXT, Markdown, DOCX · up to {MAX_FILE_SIZE_MB} MB each
+            PDF, TXT, Markdown, DOCX · up to {maxSizeMb} MB each
           </p>
         </div>
         <input

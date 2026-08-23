@@ -178,9 +178,12 @@ Password: demo1234
    `AI_BASE_URL` / `AI_CHAT_MODEL` / `AI_EMBEDDING_MODEL`.
 3. Provision Postgres (Vercel Postgres, Neon, Supabase…) and apply the schema:
    `npx prisma migrate deploy`.
-4. Deploy. File uploads use the local driver by default — for multi-region or
-   ephemeral filesystems, point `STORAGE_DRIVER=s3` and adapt
-   `src/lib/server/storage.ts` to your bucket SDK.
+4. Deploy. **Storage is automatic**: on Vercel the driver switches to
+   database storage (originals stored as `BYTEA` in Postgres) since
+   serverless disks are read-only — no configuration needed. Note that
+   serverless request-body limits cap uploads at ~4 MB on Vercel; larger
+   files require direct-to-bucket uploads via Vercel Blob or S3
+   (`src/lib/server/storage.ts` is the single seam to implement it).
 
 ## 🔐 Security notes
 

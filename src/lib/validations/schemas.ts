@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_FILE_SIZE_BYTES } from "@/lib/constants";
+import { getMaxFileSizeMb } from "@/lib/constants";
 
 export const renameDocumentSchema = z.object({
   title: z
@@ -48,8 +48,11 @@ export type UpdateCollectionInput = z.infer<typeof updateCollectionSchema>;
 export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 
 export function validateFileSize(size: number): string | null {
+  const maxMb = getMaxFileSizeMb();
   if (size === 0) return "File is empty";
-  if (size > MAX_FILE_SIZE_BYTES) return "File exceeds the 20 MB size limit";
+  if (size > maxMb * 1024 * 1024) {
+    return `File exceeds the ${maxMb} MB size limit`;
+  }
   return null;
 }
 
