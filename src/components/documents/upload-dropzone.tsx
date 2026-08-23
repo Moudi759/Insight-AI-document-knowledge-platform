@@ -36,8 +36,19 @@ interface UploadDropzoneProps {
 export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
   const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const pollIntervalsRef = React.useRef<Set<ReturnType<typeof setInterval>>>(
+    new Set()
+  );
   const [dragActive, setDragActive] = React.useState(false);
   const [items, setItems] = React.useState<UploadItem[]>([]);
+
+  // Clear any in-flight status polls when the dropzone unmounts.
+  React.useEffect(
+    () => () => {
+      pollIntervalsRef.current.forEach((intervalId) => clearInterval(intervalId));
+    },
+    []
+  );
 
   const updateItem = React.useCallback(
     (id: string, patch: Partial<UploadItem>) => {
@@ -61,8 +72,15 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
           const data: { document: { processingStatus: string } } =
             await response.json();
 
-          if (data.document.processingStatus === "READY") {
+          if (
+            data.document.processingStatus === "READY" ||
+            data.document.processingStatus === "FAILED"
+          ) {
             clearInterval(interval);
+            pollIntervalsRef.current.delete(interval);
+          }
+
+          if (data.document.processingStatus === "READY") {
             updateItem(itemId, { status: "success" });
             toast.success("Document ready", {
               description: "Your document was processed and indexed.",
@@ -70,7 +88,6 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
             onUploaded?.();
             router.refresh();
           } else if (data.document.processingStatus === "FAILED") {
-            clearInterval(interval);
             updateItem(itemId, {
               status: "error",
               error: "Processing failed — unsupported or unreadable content.",
@@ -81,6 +98,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
           /* transient network errors — keep polling */
         }
       }, 1500);
+      pollIntervalsRef.current.add(interval);
     },
     [onUploaded, router, updateItem]
   );

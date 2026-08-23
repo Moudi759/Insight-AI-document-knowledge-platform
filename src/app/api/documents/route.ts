@@ -28,16 +28,34 @@ const MIME_FALLBACKS: Record<string, FileType> = {
     "DOCX",
 };
 
+const VALID_STATUSES = new Set(["QUEUED", "PROCESSING", "READY", "FAILED"]);
+const VALID_TYPES = new Set(["PDF", "TXT", "MD", "DOCX"]);
+const VALID_SORTS = new Set(["recent", "oldest", "name", "largest"]);
+
 export async function GET(request: Request) {
   try {
     const userId = await requireUserId();
     const url = new URL(request.url);
 
+    const status = url.searchParams.get("status");
+    const fileType = url.searchParams.get("type");
+    const sort = url.searchParams.get("sort");
+
+    if (status && !VALID_STATUSES.has(status)) {
+      return NextResponse.json({ error: "Invalid status filter." }, { status: 400 });
+    }
+    if (fileType && !VALID_TYPES.has(fileType)) {
+      return NextResponse.json({ error: "Invalid type filter." }, { status: 400 });
+    }
+    if (sort && !VALID_SORTS.has(sort)) {
+      return NextResponse.json({ error: "Invalid sort option." }, { status: 400 });
+    }
+
     const documents = await listDocuments(userId, {
       query: url.searchParams.get("q") ?? undefined,
-      status: (url.searchParams.get("status") as never) ?? undefined,
-      fileType: (url.searchParams.get("type") as never) ?? undefined,
-      sort: (url.searchParams.get("sort") as never) ?? undefined,
+      status: status as never,
+      fileType: fileType as never,
+      sort: sort as never,
     });
 
     return NextResponse.json({ documents });

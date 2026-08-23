@@ -9,6 +9,7 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/documents",
   "/chat",
+  "/conversations",
   "/collections",
   "/search",
   "/analytics",

@@ -19,9 +19,22 @@ export async function generateMetadata({
   params,
 }: GenerateMetadataProps): Promise<Metadata> {
   const { id } = await params;
+  const session = await auth();
+
+  if (session?.user?.id) {
+    try {
+      const document = await getDocument(session.user.id, id);
+      return {
+        title: document.title,
+        description: `Read and chat with "${document.title}".`,
+      };
+    } catch {
+      /* fall through to generic metadata — never leak existence */
+    }
+  }
+
   return {
     title: "Document",
-    description: `Read and chat with document ${id}.`,
   };
 }
 

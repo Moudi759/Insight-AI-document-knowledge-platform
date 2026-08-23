@@ -24,7 +24,15 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/constants";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+
+  // Only allow local, same-origin redirect targets (open-redirect guard).
+  const rawCallback = searchParams.get("callbackUrl");
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/dashboard";
+  const prefillDemo = searchParams.get("demo") === "1";
+
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -34,7 +42,10 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: {
+      email: prefillDemo ? DEMO_EMAIL : "",
+      password: prefillDemo ? DEMO_PASSWORD : "",
+    },
   });
 
   async function onSubmit(values: LoginInput) {

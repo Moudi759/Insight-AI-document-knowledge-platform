@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { extractText } from "@/lib/server/documents/extraction";
 import { chunkText, estimateTokens } from "@/lib/server/documents/chunking";
-import { generateEmbeddings, isAiConfigured } from "@/lib/server/ai/embeddings";
+import { generateEmbeddings } from "@/lib/server/ai/embeddings";
 import { readFile } from "@/lib/server/storage";
 import { createApiError } from "@/lib/server/api-helpers";
 
@@ -95,10 +95,26 @@ export async function processDocument(documentId: string): Promise<void> {
       },
     });
   } catch (error) {
-    const message =
-      error && typeof error === "object" && "code" in error
-        ? String((error as { message?: string }).message)
-        : "Processing failed unexpectedly";
+    // Persist a user-safe message only; full details stay in server logs.
+    const USER_SAFE_CODES = new Set([
+      "EMPTY_DOCUMENT",
+      "EXTRACTION_FAILED",
+      "STORAGE_ERROR",
+      "STORAGE_NOT_FOUND",
+      "VALIDATION_ERROR",
+    ]);
+
+    let friendly = "Processing failed unexpectedly. Please try re-uploading the file.";
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "string" &&
+      USER_SAFE_CODES.has((error as { code: string }).code)
+    ) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string") friendly = message;
+    }
 
     console.error(`[processing] failed for ${documentId}:`, error);
 
@@ -107,9 +123,7 @@ export async function processDocument(documentId: string): Promise<void> {
         where: { id: documentId },
         data: {
           processingStatus: "FAILED",
-          errorMessage: isAiConfigured()
-            ? message
-            : message.slice(0, 300),
+          errorMessage: friendly.slice(0, 300),
         },
       })
       .catch(() => undefined);

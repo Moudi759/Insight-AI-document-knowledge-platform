@@ -2,13 +2,18 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Download,
   FileText,
   Info,
+  Loader2,
   MessageSquare,
   MessagesSquare,
+  RefreshCw,
+  TriangleAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,11 +25,92 @@ import { formatBytes, formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DocumentDetail } from "@/types";
 
-export function DocumentViewer({ document }: { document: DocumentDetail }) {
+export function DocumentViewer({ document: initialDocument }: { document: DocumentDetail }) {
+  const router = useRouter();
+  const [document, setDocument] = React.useState(initialDocument);
+  const [retrying, setRetrying] = React.useState(false);
   const meta = fileTypeMeta(document.fileType);
   const status = STATUS_META[document.processingStatus];
   const Icon = meta.icon;
   const isPdf = document.fileType === "PDF";
+  const isFailed = document.processingStatus === "FAILED";
+  const isPending =
+    document.processingStatus === "QUEUED" ||
+    document.processingStatus === "PROCESSING";
+
+  // While a retry is in flight (or the doc arrived mid-processing),
+  // poll until it reaches a terminal state, then refresh server data.
+  React.useEffect(() => {
+    if (!retrying && !isPending) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/documents/${initialDocument.id}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const data: { document: DocumentDetail } = await response.json();
+        if (
+          data.document.processingStatus === "READY" ||
+          data.document.processingStatus === "FAILED"
+        ) {
+          setDocument(data.document);
+          setRetrying(false);
+          if (data.document.processingStatus === "READY") {
+            toast.success("Document ready");
+            router.refresh();
+          }
+        }
+      } catch {
+        /* transient errors — keep polling */
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [retrying, isPending, initialDocument.id, router]);
+
+  async function handleRetry() {
+    setRetrying(true);
+    setDocument((current) => ({
+      ...current,
+      processingStatus: "PROCESSING",
+      errorMessage: null,
+    }));
+    try {
+      const response = await fetch(
+        `/api/documents/${initialDocument.id}?action=reprocess`,
+        { method: "PATCH" }
+      );
+      if (!response.ok) throw new Error();
+    } catch {
+      toast.error("Could not start reprocessing", {
+        description: "Please try again.",
+      });
+      setRetrying(false);
+    }
+  }
+
+  function renderContentPane() {
+    if (isFailed) {
+      return <FailedPane document={document} onRetry={() => void handleRetry()} retrying={retrying} />;
+    }
+    if (isPdf) {
+      if (isPending || retrying) return <ProcessingPane />;
+      return (
+        <iframe
+          src={`/api/documents/${document.id}/file#view=FitH`}
+          title={document.title}
+          className="h-full w-full border-0 bg-white"
+        />
+      );
+    }
+    return (
+      <ExtractedTextViewer
+        text={document.extractedText}
+        status={retrying ? "PROCESSING" : document.processingStatus}
+      />
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] flex-col">
@@ -69,15 +155,7 @@ export function DocumentViewer({ document }: { document: DocumentDetail }) {
         </aside>
 
         <section className="min-h-0 overflow-hidden" aria-label="Document content">
-          {isPdf ? (
-            <iframe
-              src={`/api/documents/${document.id}/file#view=FitH`}
-              title={document.title}
-              className="h-full w-full border-0 bg-white"
-            />
-          ) : (
-            <ExtractedTextViewer text={document.extractedText} status={document.processingStatus} />
-          )}
+          {renderContentPane()}
         </section>
 
         <aside className="border-l" aria-label="AI assistant panel">
@@ -106,7 +184,15 @@ export function DocumentViewer({ document }: { document: DocumentDetail }) {
                 <InfoPanel document={document} compact />
               </aside>
               <section className="min-h-0 overflow-y-auto" aria-label="Document content">
-                {isPdf ? (
+                {isFailed ? (
+                  <FailedPane
+                    document={document}
+                    onRetry={() => void handleRetry()}
+                    retrying={retrying}
+                  />
+                ) : isPdf && (isPending || retrying) ? (
+                  <ProcessingPane />
+                ) : isPdf ? (
                   <object
                     data={`/api/documents/${document.id}/file`}
                     type="application/pdf"
@@ -127,7 +213,7 @@ export function DocumentViewer({ document }: { document: DocumentDetail }) {
                 ) : (
                   <ExtractedTextViewer
                     text={document.extractedText}
-                    status={document.processingStatus}
+                    status={retrying ? "PROCESSING" : document.processingStatus}
                   />
                 )}
               </section>
@@ -264,6 +350,54 @@ function ExtractedTextViewer({
         {text}
       </div>
     </article>
+  );
+}
+
+function FailedPane({
+  document,
+  onRetry,
+  retrying,
+}: {
+  document: DocumentDetail;
+  onRetry: () => void;
+  retrying: boolean;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl border bg-destructive/10">
+        <TriangleAlert className="h-5 w-5 text-destructive" aria-hidden="true" />
+      </span>
+      <div>
+        <p className="text-sm font-semibold">This document failed to process</p>
+        <p className="mx-auto mt-1 max-w-sm break-words text-xs leading-relaxed text-muted-foreground">
+          {document.errorMessage ??
+            "The content could not be extracted from this file."}
+        </p>
+      </div>
+      <Button size="sm" onClick={onRetry} disabled={retrying} className="mt-1">
+        {retrying ? (
+          <Loader2 className="animate-spin" aria-hidden="true" />
+        ) : (
+          <RefreshCw aria-hidden="true" />
+        )}
+        Try processing again
+      </Button>
+    </div>
+  );
+}
+
+function ProcessingPane() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
+      <div>
+        <p className="text-sm font-medium">Processing document…</p>
+        <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
+          Text is being extracted, chunked and indexed. This usually takes a
+          few seconds.
+        </p>
+      </div>
+    </div>
   );
 }
 

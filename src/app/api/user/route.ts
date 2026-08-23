@@ -24,7 +24,10 @@ export async function PATCH(request: Request) {
       where: { id: userId },
       data: {
         name: parsed.data.name,
-        image: parsed.data.image || null,
+        // Only touch image when explicitly provided — never wipe it silently.
+        ...(parsed.data.image !== undefined
+          ? { image: parsed.data.image || null }
+          : {}),
       },
     });
 
