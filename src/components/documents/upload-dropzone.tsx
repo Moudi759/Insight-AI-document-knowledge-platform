@@ -228,7 +228,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
         uploadFile(file, itemId);
       }
     },
-    [uploadFile]
+    [maxSizeMb, uploadFile]
   );
 
   const onDrop = React.useCallback(

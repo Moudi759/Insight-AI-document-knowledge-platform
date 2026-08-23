@@ -3,6 +3,11 @@ export const APP_TAGLINE = "Turn your documents into knowledge.";
 export const APP_DESCRIPTION =
   "Insight is an AI-powered document and knowledge platform. Upload documents, organize your library, and chat with your knowledge.";
 
+/** Public origin of the deployment — tolerant of empty/blank env values. */
+export function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+}
+
 export const MAX_FILE_SIZE_MB = 20;
 export const DEFAULT_MAX_FILE_SIZE_MB = MAX_FILE_SIZE_MB;
 export const SERVERLESS_MAX_FILE_SIZE_MB = 4;

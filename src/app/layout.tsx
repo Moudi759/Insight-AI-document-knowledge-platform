@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
+import { APP_DESCRIPTION, APP_NAME, getAppUrl } from "@/lib/constants";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -27,9 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(getAppUrl()),
   title: {
     default: `${APP_NAME} — AI Document & Knowledge Platform`,
     template: `%s · ${APP_NAME}`,
