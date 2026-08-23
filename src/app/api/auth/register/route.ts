@@ -6,9 +6,13 @@ import {
   createApiError,
   handleApiError,
 } from "@/lib/server/api-helpers";
+import { enforceRateLimit, getClientIp } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    // Throttle account creation per IP.
+    enforceRateLimit(`register:${getClientIp(request)}`, 5, 10 * 60_000);
+
     const body: unknown = await request.json();
     const parsed = registerSchema.safeParse(body);
 

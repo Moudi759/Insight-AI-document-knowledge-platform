@@ -16,6 +16,8 @@ import {
   streamChatAnswer,
   type ChatMessage,
 } from "@/lib/server/ai/chat";
+import { enforceRateLimit } from "@/lib/server/rate-limit";
+import { getPlanLimits, startOfCurrentMonth } from "@/lib/constants";
 
 export const maxDuration = 120;
 
@@ -47,6 +49,26 @@ export async function POST(request: Request) {
     const { content, documentId, conversationId } = parsed.data;
     const isRegenerate =
       new URL(request.url).searchParams.get("regenerate") === "1";
+
+    // Abuse guard: burst limit per user.
+    enforceRateLimit(`chat:${userId}`, 20, 60_000);
+
+    // Plan quota: monthly AI questions.
+    const limits = getPlanLimits();
+    const askedThisMonth = await db.message.count({
+      where: {
+        role: "USER",
+        conversation: { userId },
+        createdAt: { gte: startOfCurrentMonth() },
+      },
+    });
+    if (askedThisMonth >= limits.monthlyQuestions) {
+      throw createApiError(
+        "PLAN_LIMIT",
+        `You've reached your monthly question limit (${limits.monthlyQuestions}). It resets next month — paid plans with higher limits are coming soon.`,
+        403
+      );
+    }
 
     // ── Resolve or create the conversation (ownership-checked) ──
     let conversationIdResolved: string;

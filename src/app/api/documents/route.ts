@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { db } from "@/lib/db";
-import { requireUserId, handleApiError } from "@/lib/server/api-helpers";
+import {
+  requireUserId,
+  handleApiError,
+  createApiError,
+} from "@/lib/server/api-helpers";
 import {
   validateFileExtension,
   validateFileSize,
@@ -8,6 +13,8 @@ import {
 import { saveFile, buildStorageKey } from "@/lib/server/storage";
 import { processDocument } from "@/lib/server/documents/processing";
 import { listDocuments } from "@/lib/server/documents/service";
+import { enforceRateLimit } from "@/lib/server/rate-limit";
+import { getPlanLimits } from "@/lib/constants";
 import type { FileType } from "@prisma/client";
 import type { DocumentSummary } from "@/types";
 
@@ -67,6 +74,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const userId = await requireUserId();
+
+    // Abuse guards: per-user upload burst limit and plan document quota.
+    enforceRateLimit(`upload:${userId}`, 10, 60_000);
+    const limits = getPlanLimits();
+    const totalDocuments = await db.document.count({ where: { userId } });
+    if (totalDocuments >= limits.documents) {
+      throw createApiError(
+        "PLAN_LIMIT",
+        `You've reached the document limit for your plan (${limits.documents}). Manage your library or upgrade to continue.`,
+        403
+      );
+    }
 
     const formData = await request.formData().catch(() => null);
     const file = formData?.get("file");
@@ -130,8 +149,11 @@ export async function POST(request: Request) {
       data: { storageKey },
     });
 
-    // Process in the background; the client polls for status updates.
-    void processDocument(created.id).catch(() => undefined);
+    // Process after the response is sent — keeps serverless invocations
+    // alive for the pipeline without blocking the upload acknowledgement.
+    after(async () => {
+      await processDocument(created.id).catch(() => undefined);
+    });
 
     const response: { document: Pick<DocumentSummary, "id" | "title"> } = {
       document: { id: created.id, title: titleFromFile },

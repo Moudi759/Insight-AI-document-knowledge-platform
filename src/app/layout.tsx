@@ -27,11 +27,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  ),
   title: {
     default: `${APP_NAME} — AI Document & Knowledge Platform`,
     template: `%s · ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
+  openGraph: {
+    title: `${APP_NAME} — AI Document & Knowledge Platform`,
+    description: APP_DESCRIPTION,
+    type: "website",
+    siteName: APP_NAME,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — AI Document & Knowledge Platform`,
+    description: APP_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -17,6 +17,10 @@ export interface RetrievedChunk {
 
 const TOP_K = 6;
 const MIN_SCORE = 0.05;
+/** Upper bound on documents scanned per query — keeps memory bounded
+ * while the JSON-embedding strategy is in place. Swap this module for
+ * pgvector to remove the cap entirely. */
+const MAX_DOCUMENTS_SCANNED = 80;
 
 /**
  * Retrieval pipeline: embed the question, rank the user's chunks by
@@ -37,6 +41,8 @@ export async function retrieveRelevantChunks(
       processingStatus: "READY",
       ...(documentId ? { id: documentId } : {}),
     },
+    orderBy: { updatedAt: "desc" },
+    take: MAX_DOCUMENTS_SCANNED,
     select: {
       id: true,
       title: true,

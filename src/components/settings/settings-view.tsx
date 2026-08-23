@@ -106,13 +106,31 @@ const THEME_OPTIONS = [
 
 function AppearanceTab() {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
+
+  function selectTheme(value: (typeof THEME_OPTIONS)[number]["value"]) {
+    setTheme(value);
+    // Persist the preference so it follows the account across devices.
+    void fetch("/api/user/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: value.toUpperCase() }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+      })
+      .catch(() => {
+        toast.error("Could not save theme preference");
+      });
+    router.refresh();
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Appearance</CardTitle>
         <CardDescription>
-          Choose how Insight looks on this device.
+          Choose how Insight looks on this device — saved to your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -127,7 +145,7 @@ function AppearanceTab() {
               type="button"
               role="radio"
               aria-checked={theme === option.value}
-              onClick={() => setTheme(option.value)}
+              onClick={() => selectTheme(option.value)}
               className={`rounded-lg border p-3 text-center text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 theme === option.value
                   ? "border-primary bg-primary/5 text-primary"

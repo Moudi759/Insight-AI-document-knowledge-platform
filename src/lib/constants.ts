@@ -24,6 +24,21 @@ export const ACCEPTED_EXTENSIONS_FLAT = ACCEPTED_FILE_TYPES.flatMap(
 export const FREE_PLAN_DOCUMENT_LIMIT = 50;
 export const FREE_PLAN_MONTHLY_QUESTIONS = 200;
 
+/** Plan limits, overridable per deployment via environment variables. */
+export function getPlanLimits(): { documents: number; monthlyQuestions: number } {
+  return {
+    documents: Number(process.env.PLAN_DOCUMENT_LIMIT ?? FREE_PLAN_DOCUMENT_LIMIT),
+    monthlyQuestions: Number(
+      process.env.PLAN_MONTHLY_QUESTIONS ?? FREE_PLAN_MONTHLY_QUESTIONS
+    ),
+  };
+}
+
+export function startOfCurrentMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
 export const STORAGE_DIR = ".storage";
 
 export const DEMO_EMAIL = "demo@insight.app";

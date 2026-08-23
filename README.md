@@ -186,7 +186,13 @@ Password: demo1234
 
 - Passwords hashed with bcrypt (12 rounds); sessions are signed JWTs.
 - Zod validation on every mutating endpoint; strict file-type/size checks.
+- **Rate limiting** on auth, registration, uploads and chat (fixed-window,
+  per-instance — back with Redis for multi-instance deployments).
+- **Plan enforcement**: document count and monthly question quotas are
+  enforced server-side (`PLAN_DOCUMENT_LIMIT`, `PLAN_MONTHLY_QUESTIONS`).
 - Per-user row scoping on all reads/writes; storage keys namespaced per user.
+- Same-origin-only login redirects (open-redirect guard); sanitized
+  user-facing processing errors.
 - Secrets only via environment variables; nothing sensitive reaches the client.
 
 ## 🗺 Future improvements
@@ -195,7 +201,9 @@ Password: demo1234
 - OCR fallback for scanned PDFs
 - OAuth providers & team workspaces with roles
 - S3/R2 storage driver out of the box
+- Distributed rate limiting (Redis/Upstash) and durable job queue for processing
 - Streaming tool-calls for multi-document comparison answers
+- Email digest delivery for the weekly-summary preference
 - E2E tests (Playwright) and CI workflow
 
 ---

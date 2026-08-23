@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import {
   requireUserId,
   handleApiError,
@@ -45,7 +46,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (action === "reprocess") {
       await getOwnedDocument(userId, id);
-      void processDocument(id).catch(() => undefined);
+      after(async () => {
+        await processDocument(id).catch(() => undefined);
+      });
       return NextResponse.json({ ok: true });
     }
 

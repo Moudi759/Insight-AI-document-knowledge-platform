@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { usePreferences } from "@/components/preferences-provider";
 import { ACCEPTED_EXTENSIONS_FLAT, MAX_FILE_SIZE_MB } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/format";
@@ -59,6 +60,8 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
     []
   );
 
+  const { notificationsEnabled } = usePreferences();
+
   /** Poll the document until processing finishes, then refresh lists. */
   const pollProcessing = React.useCallback(
     (documentId: string, itemId: string) => {
@@ -82,9 +85,11 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
 
           if (data.document.processingStatus === "READY") {
             updateItem(itemId, { status: "success" });
-            toast.success("Document ready", {
-              description: "Your document was processed and indexed.",
-            });
+            if (notificationsEnabled) {
+              toast.success("Document ready", {
+                description: "Your document was processed and indexed.",
+              });
+            }
             onUploaded?.();
             router.refresh();
           } else if (data.document.processingStatus === "FAILED") {
@@ -100,7 +105,7 @@ export function UploadDropzone({ onUploaded, compact }: UploadDropzoneProps) {
       }, 1500);
       pollIntervalsRef.current.add(interval);
     },
-    [onUploaded, router, updateItem]
+    [notificationsEnabled, onUploaded, router, updateItem]
   );
 
   const uploadFile = React.useCallback(
