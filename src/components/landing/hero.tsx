@@ -144,7 +144,7 @@ function AppPreview() {
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pb-20 pt-36 sm:pt-40">
+    <section className="relative overflow-hidden pb-16 pt-28 sm:pb-20 sm:pt-40">
       {/* Backdrop */}
       <div className="pointer-events-none absolute inset-0 grid-pattern [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)]" aria-hidden="true" />
       <div

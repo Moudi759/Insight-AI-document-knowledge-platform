@@ -41,7 +41,7 @@ const USE_CASES = [
 
 export function UseCases() {
   return (
-    <section id="use-cases" className="container scroll-mt-20 py-24">
+    <section id="use-cases" className="container scroll-mt-20 py-16 sm:py-24">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold text-primary">Use cases</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">

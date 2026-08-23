@@ -221,7 +221,7 @@ export function ChatView({
   );
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)]">
       {/* Conversations rail — desktop */}
       <aside className="hidden w-72 shrink-0 border-r bg-sidebar lg:block">
         {rail()}
@@ -256,11 +256,11 @@ export function ChatView({
             Answers grounded in your library
           </span>
 
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Context</span>
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 sm:flex-none">
+            <span className="hidden text-xs text-muted-foreground sm:block">Context</span>
             <Select value={documentId} onValueChange={setDocumentId}>
               <SelectTrigger
-                className="w-[170px] sm:w-[220px]"
+                className="w-[150px] min-w-0 flex-1 sm:w-[220px] sm:flex-none"
                 aria-label="Choose document context"
               >
                 <SelectValue placeholder="Select context" />
@@ -386,7 +386,7 @@ export function ChatView({
 
 export function ChatViewSkeleton() {
   return (
-    <div className="flex h-[calc(100dvh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)]">
       <div className="hidden w-72 border-r bg-sidebar p-3 lg:block">
         <Skeleton className="h-9 w-full" />
         <Skeleton className="mt-4 h-14 w-full rounded-lg" />

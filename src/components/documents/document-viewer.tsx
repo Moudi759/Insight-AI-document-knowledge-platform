@@ -27,7 +27,7 @@ export function DocumentViewer({ document }: { document: DocumentDetail }) {
   const isPdf = document.fileType === "PDF";
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
+    <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] flex-col">
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur sm:px-6">
         <Button asChild variant="ghost" size="icon-sm" aria-label="Back to documents">
@@ -269,7 +269,7 @@ function ExtractedTextViewer({
 
 export function DocumentViewerSkeleton() {
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
+    <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] flex-col">
       <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4 sm:px-6">
         <Skeleton className="h-8 w-8 rounded-md" />
         <div className="space-y-1.5">

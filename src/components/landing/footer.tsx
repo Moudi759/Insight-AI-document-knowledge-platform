@@ -25,7 +25,7 @@ const SOCIALS = [
 export function Footer() {
   return (
     <footer className="border-t bg-sidebar/60">
-      <div className="container py-14">
+      <div className="container py-10 sm:py-14">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Logo />

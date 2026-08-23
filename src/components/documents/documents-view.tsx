@@ -133,7 +133,7 @@ export function DocumentsView({ initialDocuments }: DocumentsViewProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[130px]" aria-label="Filter by file type">
+            <SelectTrigger className="min-w-0 flex-1 sm:w-[130px] sm:flex-none" aria-label="Filter by file type">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +146,7 @@ export function DocumentsView({ initialDocuments }: DocumentsViewProps) {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]" aria-label="Filter by status">
+            <SelectTrigger className="min-w-0 flex-1 sm:w-[140px] sm:flex-none" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -158,7 +158,7 @@ export function DocumentsView({ initialDocuments }: DocumentsViewProps) {
           </Select>
 
           <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-[150px]" aria-label="Sort documents">
+            <SelectTrigger className="min-w-0 flex-1 sm:w-[150px] sm:flex-none" aria-label="Sort documents">
               <SlidersHorizontal className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
               <SelectValue />
             </SelectTrigger>

@@ -1,9 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#090b18" },
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfd" },
+  ],
+};
 
 const inter = Inter({
   subsets: ["latin"],

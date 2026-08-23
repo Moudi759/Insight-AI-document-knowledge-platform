@@ -28,7 +28,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="border-y bg-sidebar/60 py-24 scroll-mt-20"
+      className="border-y bg-sidebar/60 py-16 scroll-mt-20 sm:py-24"
     >
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
