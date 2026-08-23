@@ -1,6 +1,6 @@
 {
   "name": "insight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Turn your documents into knowledge — an AI-powered document and knowledge platform.",
   "scripts": {
